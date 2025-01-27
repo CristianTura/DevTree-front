@@ -1,10 +1,10 @@
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { isAxiosError } from "axios";
+import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom"
 import ErrorMessage from "../components/ErrorMessage";
 import { LoginForm } from "../types";
-import api from "../config/axios";
+import { login } from "../api/DevTreeApi";
 
 const LoginView = () => {
     const navigate = useNavigate()
@@ -13,18 +13,20 @@ const LoginView = () => {
         password: '',
     }
 
+    const mutation = useMutation({
+        mutationFn: login,
+        onError: error => {
+            toast.error(error.message)
+        },
+        onSuccess: () => {
+            navigate('/admin')
+        }
+    })
+
     const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({defaultValues: initialValues});
 
     const handleLogin = async (formData: LoginForm) => {
-        try {
-        const { data } = await api.post('/auth/login', formData)
-        localStorage.setItem('AUTH_TOKEN', data)
-        navigate('/admin')
-        } catch (error) {
-            if(isAxiosError(error) && error.response) {
-                toast.error(error.response.data.error);
-            }
-        }
+        mutation.mutate(formData)
     }
 
   return (

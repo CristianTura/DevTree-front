@@ -2,9 +2,9 @@ import { useForm } from "react-hook-form"
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ErrorMessage from "../components/ErrorMessage";
 import { RegisterForm } from "../types";
-import { isAxiosError } from "axios";
 import { toast } from "sonner";
-import api from "../config/axios";
+import { useMutation } from "@tanstack/react-query";
+import { registerUser } from "../api/DevTreeApi";
 
 const RegisterView = () => {
     const location = useLocation()
@@ -20,19 +20,22 @@ const RegisterView = () => {
 
     const { register, watch, handleSubmit, reset, formState: { errors } } = useForm<RegisterForm>({defaultValues: initialValues});
 
-    const password = watch('password', '');
-
-    const handleRegister = async (formData: RegisterForm) => {
-        try {
-            const { data } = await api.post('/auth/register', formData)
+    const mutation = useMutation({
+        mutationFn: registerUser,
+        onError: error => {
+            toast.error(error.message);
+        },
+        onSuccess: (data) => {
             toast.success(data)
             reset()
             navigate('/auth/login')
-        } catch (error) {
-            if(isAxiosError(error) && error.response) {
-                toast.error(error.response.data.error);
-            }
         }
+    })
+
+    const password = watch('password', '');
+
+    const handleRegister = async (formData: RegisterForm) => {
+        mutation.mutate(formData)
     }
 
   return (
